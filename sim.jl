@@ -3,18 +3,19 @@
 using SIUnits
 using SIUnits.ShortUnits
 
+const zero_speed = Vector([eps()m/s, eps()m/s, eps()m/s])
+const zero_locat = Vector([eps()m, eps()m, eps()m])
 
 const G = 6.673e-11(N*(m^2)/(kg^2))
 
-typealias Vector{T} Array{T,1}
-typealias Matrix{T} Array{T,2}
+#typealias Vector{T} Array{T,1}
+#typealias Matrix{T} Array{T,2}
 immutable Body
     mass #::kg
     rad  #::m
     loc  ::Vector
     vel  ::Vector
 end
-
 typealias Universe Set{Body}
 
 function prt(A)
@@ -48,14 +49,12 @@ function unit(v::Vector)
     w/length(w)
 end
 
-
 function direction(b::Body, c::Body)
     d = c.loc .- b.loc
     unit(d)
 end
 
-
-function Update(b::Body, u::Universe, time=10s)
+function Update(b::Body, u::Universe, time)
     acting = setdiff(u, Set([b]))
     accel  = sum(map((c -> direction(b, c) .* acc_by_grav(b, c)), acting))
 
@@ -65,18 +64,9 @@ function Update(b::Body, u::Universe, time=10s)
     Body(b.mass, b.rad, pos, velocity)
 end
 
-
-function Update(u::Universe, time=10s)
+function Update(u::Universe, time=86400s)
     Universe(map((b -> Update(b, u, time)), u))
 end
-
-sqrt(2)m == length(Vector([1m, 1m]))
-sqrt(3)m == length(Vector([1m, 1m, 1m]))
-sqrt(4)m == length(Vector([1m, 1m, 1m, 1m]))
-
-
-const zero_speed = Vector([eps()m/s, eps()m/s, eps()m/s])
-const zero_locat = Vector([eps()m, eps()m, eps()m])
 
 earth = Body(5.972e24kg, 6371km,   Vector([1e10km,1e10km,1e10km]), zero_speed)
 sun   = Body(1.989e30kg, 695700km, zero_locat, zero_speed)
@@ -85,5 +75,10 @@ earth
 acc_by_grav(earth)
 acc_by_grav(sun, earth)
 
-u = Universe([earth, sun])
-Update(u)
+I = Universe([earth, sun])
+
+function steps(U::Universe, s::Integer)
+    (s < 1) ? U : steps(Update(U), s-1)
+end
+
+steps(I, 100)
