@@ -3,6 +3,8 @@
 using SIUnits
 using SIUnits.ShortUnits
 
+using Plots
+
 const zero_vel = Vector([eps()m/s, eps()m/s, eps()m/s])
 const zero_pos   = Vector([eps()m, eps()m, eps()m])
 
@@ -137,7 +139,7 @@ function steps(U::Universe, s::Integer)
 end
 
 function get_positions(u::Universe)
-    lround = identity #f -> round(f, 3)
+    lround = f -> round(f, 3)
     map(b -> map(lround, map(float, b.pos)), u)
 end
 
