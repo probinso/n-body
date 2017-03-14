@@ -57,7 +57,7 @@ end
 function Update(b::Body, u::Universe, time)
     acting = setdiff(u, Set([b]))
 
-    acc = sum(map((c -> direction(b, c) .* acc_by_grav(b, c)), acting))
+    acc = sum(pmap((c -> direction(b, c) .* acc_by_grav(b, c)), acting))
     vel = b.vel .+ acc * time
     pos = b.pos .+ (b.vel .* time) .+ (acc .* time ^ 2)
 
@@ -91,7 +91,7 @@ end
 
 function Update(u::Universe, time=3600s)
     v = collisions(u)
-    Universe(map(b -> Update(b, v, time), v))
+    Universe(pmap(b -> Update(b, v, time), v))
 end
 
 sun =
@@ -122,7 +122,7 @@ earth =
     Body(
          5.972e24kg,
          6371km,
-         Vector([1e10km,1e10km,1e10km]),
+         Vector([1e10km, 1e10km, 1e10km]),
          zero_vel
          )
 
@@ -153,15 +153,19 @@ saturn  =
 uranus  = zero_body
 neptune = zero_body
 
-
-
 acc_by_grav(earth)
 acc_by_grav(sun, earth)
 
 I = Universe([sun, mercury, venus, earth, mars, jupiter, saturn])
 
 function steps(U::Universe, s::Integer)
-    (s < 1) ? U : steps(Update(U), s-1)
+    println("START")
+    for i in 1:s
+        U = Update(U)
+        println(length(U))
+        # produce(U)
+        # println("yield")
+    end
 end
 
 function get_positions(u::Universe)
@@ -169,17 +173,13 @@ function get_positions(u::Universe)
     map(b -> map(lround, map(float, b.pos)), u)
 end
 
-
-
 #steps(I, 10)
-
 using Distributions
 
 M = Normal(6e4, 1e2)
-R = Normal(1e2, 1e1)
-P = Uniform(-1e10, 1e10)
-V = Normal(0, 5)
-
+R = Normal(1e3, 1e1)
+P = Uniform(-1e5, 1e5)
+V = Normal(1e5, 1e2)
 
 count = 100
 
@@ -192,11 +192,17 @@ U = Universe(
               for i in 1:count]
              )
 
+steps(U, 1000)
+
 #=
 scatter(
-        map(b->b.pos[1], U),
-        map(b->b.pos[2], U),
-        s=map(b->b.rad, U),
+        map(float, map(b->b.pos[1], U)),
+        map(float, map(b->b.pos[2], U)),
+        s=map(float, map(b->b.rad, U)),
         alpha=0.5
         )
+
+for x in Task(steps(U, 10))
+    println(x)
+end
 =#
