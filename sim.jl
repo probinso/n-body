@@ -3,8 +3,6 @@
 using SIUnits
 using SIUnits.ShortUnits
 
-using Plots
-
 const zero_vel = Vector([eps()m/s, eps()m/s, eps()m/s])
 const zero_pos = Vector([eps()m, eps()m, eps()m])
 const G = 6.673e-11(N*(m^2)/(kg^2))
@@ -173,6 +171,32 @@ end
 
 
 
-steps(I, 10)
+#steps(I, 10)
 
-# using Distributions
+using Distributions
+
+M = Normal(6e4, 1e2)
+R = Normal(1e2, 1e1)
+P = Uniform(-1e10, 1e10)
+V = Normal(0, 5)
+
+
+count = 100
+
+U = Universe(
+             [Body(
+                   rand(M)kg, rand(R)km,
+                   [rand(P)km, rand(P)km],
+                   [rand(V)m/s, rand(V)m/s]
+                   )
+              for i in 1:count]
+             )
+
+#=
+scatter(
+        map(b->b.pos[1], U),
+        map(b->b.pos[2], U),
+        s=map(b->b.rad, U),
+        alpha=0.5
+        )
+=#
