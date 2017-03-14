@@ -6,8 +6,7 @@ using SIUnits.ShortUnits
 using Plots
 
 const zero_vel = Vector([eps()m/s, eps()m/s, eps()m/s])
-const zero_pos   = Vector([eps()m, eps()m, eps()m])
-
+const zero_pos = Vector([eps()m, eps()m, eps()m])
 const G = 6.673e-11(N*(m^2)/(kg^2))
 
 immutable Body
@@ -16,6 +15,7 @@ immutable Body
     pos  ::Vector
     vel  ::Vector
 end
+
 const zero_body = Body(eps()kg, eps()km, zero_pos, zero_vel)
 
 typealias Universe Set{Body}
@@ -25,12 +25,12 @@ function prt(A)
     A
 end
 
-function length(v::Vector)
+function vlength(v::Vector)
     sqrt(sum(v .^ 2))
 end
 
 function distance(v::Vector, w::Vector)
-    length(v .- w)
+    vlength(v .- w)
 end
 
 function distance(b::Body, c::Body)
@@ -48,7 +48,7 @@ end
 
 function unit(v::Vector)
     w = map(float, v)
-    w/length(w)
+    w/vlength(w)
 end
 
 function direction(b::Body, c::Body)
@@ -66,8 +66,34 @@ function Update(b::Body, u::Universe, time)
     Body(b.mass, b.rad, pos, vel)
 end
 
+function Join(a::Body, b::Body)
+    Body(
+         a.mass + b.mass,
+         sum([a.rad, b.rad] .^ 3)^(1/3),
+         (a.pos + b.pos)/2,
+         (a.mass*a.vel + b.mass*b.vel)/(a.mass + b.mass)
+         )
+end
+
+function collisions(u::Universe)
+    group_collide = (b, u) -> filter(c -> distance(b, c) < max(b.rad, c.rad), u)
+
+    v = Universe()
+    while !isempty(u)
+        b = pop!(u)
+        group = group_collide(b, u)
+        for c in group
+            delete!(u, c)
+        end
+        group = union(group, [b])
+        v = union(v, [reduce(Join, group)])
+    end
+    Universe(v)
+end
+
 function Update(u::Universe, time=3600s)
-    Universe(map((b -> Update(b, u, time)), u))
+    v = collisions(u)
+    Universe(map(b -> Update(b, v, time), v))
 end
 
 sun =
@@ -129,6 +155,8 @@ saturn  =
 uranus  = zero_body
 neptune = zero_body
 
+
+
 acc_by_grav(earth)
 acc_by_grav(sun, earth)
 
@@ -144,4 +172,7 @@ function get_positions(u::Universe)
 end
 
 
-prt(get_positions(steps(I, 0)))
+
+steps(I, 10)
+
+# using Distributions
